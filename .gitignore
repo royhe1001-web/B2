@@ -1,0 +1,14 @@
+__pycache__/
+*.pyc
+output/
+.claude/
+*.db
+*.pkl
+*.csv
+*.parquet
+*.xlsx
+*.json
+*.png
+*.baiduyun*
+output/
+__pycache__/
