@@ -473,10 +473,12 @@ class OAMVSimEngine:
 
     def run(self, use_cache=True):
         # 信号缓存: 同参数+同日期范围秒级恢复
-        import hashlib
+        import hashlib, json
+        param_fp = json.dumps({k: str(v) for k, v in sorted(self.b2_params.items())}, sort_keys=True)
+        stock_fp = str(len(self.stock_data))
         cache_key = hashlib.md5(
-            f"{sorted(self.stock_data.keys())[:10]}{SIM_START}{SIM_END}{self.b2_params.get('t1_threshold',3.5)}".encode()
-        ).hexdigest()[:8]
+            f"{stock_fp}{param_fp}{SIM_START}{SIM_END}".encode()
+        ).hexdigest()[:12]
         cache_path = Path(__file__).parent.parent / 'output' / f'signal_cache_{cache_key}.pkl'
 
         signals = None
