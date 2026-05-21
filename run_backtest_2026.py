@@ -27,9 +27,9 @@ BEST_B2 = {
     'j_prev_max': 20, 'gain_min': 0.04, 'j_today_max': 65,
     'shadow_max': 0.035, 'j_today_loose': 70, 'shadow_loose': 0.045,
     'prior_strong_ret': 0.20,
-    'weight_gain_2x_thresh': 0.09, 'weight_gain_2x': 2.5,
+    'weight_gain_2x_thresh': 0.0842, 'weight_gain_2x': 1.479,
     'weight_gap_thresh': 0.02, 'weight_gap_up': 1.5,
-    'weight_shrink': 1.2, 'weight_deep_shrink_ratio': 0.80,
+    'weight_shrink': 1.171, 'weight_deep_shrink_ratio': 0.80,
     'weight_deep_shrink': 1.3, 'weight_pullback_thresh': -0.05,
     'weight_pullback': 1.2, 'weight_shadow_discount_thresh': 0.015,
     'weight_shadow_discount': 0.7, 'weight_strong_discount': 0.8,
@@ -39,13 +39,13 @@ BEST_B2 = {
 }
 
 BEST_OAMV = {
-    'mktcap_lower_pct': 50, 'mktcap_upper_pct': 100,
+    'mktcap_lower_pct': 50, 'mktcap_upper_pct': 96,
 }
 
 
 def load_all(test_start, test_end):
     print('=' * 70)
-    print(f'  Spring B2 朴素版 -- P50, 自定义规则')
+    print(f'  Spring B2 -- P50-P96, 5-exit rules')
     print(f'  {test_start.date()} ~ {test_end.date()}')
     print('=' * 70)
 
@@ -55,23 +55,23 @@ def load_all(test_start, test_end):
     t0 = time.time()
     mktcap_lookup = build_mktcap_lookup()
     percentiles = compute_mktcap_percentiles()
-    print(f'  市值: {len(mktcap_lookup)} entries ({time.time()-t0:.0f}s)')
+    print(f'  Market cap: {len(mktcap_lookup)} entries ({time.time()-t0:.0f}s)')
 
     ym_start = test_start.strftime('%Y-%m')
     ym_end = test_end.strftime('%Y-%m')
     eligible_codes = get_pct_universe(mktcap_lookup, percentiles, ym_start,
-                                      ym_end=ym_end, lower_pct=50, upper_pct=100)
-    print(f'  P50-P100: {len(eligible_codes)} 只')
+                                      ym_end=ym_end, lower_pct=50, upper_pct=96)
+    print(f'  P50-P96: {len(eligible_codes)} stocks')
 
     t0 = time.time()
     oamv_df = fetch_market_data(start='20180101')
     oamv_df = calc_oamv(oamv_df)
     oamv_df = generate_signals(oamv_df)
-    print(f'  OAMV: {len(oamv_df)} 天 ({time.time()-t0:.0f}s)')
+    print(f'  OAMV: {len(oamv_df)} days ({time.time()-t0:.0f}s)')
 
     t0 = time.time()
     stock_data = preload_stock_data(eligible_codes)
-    print(f'  K线: {len(stock_data)} 只 ({time.time()-t0:.0f}s)')
+    print(f'  K-line: {len(stock_data)} stocks ({time.time()-t0:.0f}s)')
 
     return stock_data, oamv_df, mktcap_lookup, percentiles
 
@@ -94,7 +94,7 @@ def main():
         p2c_mod.SIM_END = test_end
 
     print(f'\n{"="*70}')
-    print(f'  朴素版: P50 + 自定义离场规则')
+    print(f'  B2 Spring: P50-P96, 5-exit rules')
     print(f'{"="*70}')
 
     t0 = time.time()
@@ -109,6 +109,34 @@ def main():
           f'Trades={m["n_trades"]}  MaxDD={m["max_dd"]:.1%}  '
           f'({elapsed:.0f}s)')
 
+    # 导出期末持仓供实时卖出检测
+    import json as _json
+    sig_dir = os.path.join(BASE, 'output', 'signals')
+    os.makedirs(sig_dir, exist_ok=True)
+    positions = []
+    for code, pos in engine.positions.items():
+        df = stock_data.get(code)
+        if df is not None and len(df) > 0:
+            last_row = df.iloc[-1]
+            positions.append({
+                'symbol': code,
+                'entry_price': round(pos.buy_price, 2),
+                'entry_low': round(pos.entry_low, 2),
+                'entry_date': str(pos.buy_date.date()),
+                'signal_close': round(pos.signal_close, 2),
+                'signal_weight': round(pos.signal_weight, 2),
+                'half_sold': pos.half_sold,
+                'shares': pos.shares,
+                'last_close': round(float(last_row['close']), 2),
+                'return_pct': round((float(last_row['close']) / pos.buy_price - 1) * 100, 1),
+            })
+    with open(os.path.join(sig_dir, 'current_positions.json'), 'w') as f:
+        _json.dump(positions, f, ensure_ascii=False, indent=2)
+    print(f'  EOD positions: {len(positions)} -> output/signals/current_positions.json')
+    if positions:
+        for p in positions:
+            sym = p['symbol']; ep = p['entry_price']; sw = p['signal_weight']; rp = p['return_pct']
+            print(f'    {sym:>8s} entry={ep:.2f} weight={sw:.1f} ret={rp:+.1f}%')
     print()
 
 
