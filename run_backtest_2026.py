@@ -41,7 +41,7 @@ BEST_B2 = {
 
 BEST_OAMV = {
     'mktcap_lower_pct': 50, 'mktcap_upper_pct': 96,
-    'max_positions': 4,
+    'max_positions': 3,
 }
 
 
@@ -53,6 +53,11 @@ def load_all(test_start, test_end):
 
     p2c_mod.SIM_START = test_start
     p2c_mod.SIM_END = test_end
+
+    # 清除信号缓存 (缓存key只取前10只股票, 数据变化后命中旧缓存导致收益漂移)
+    import glob as _glob
+    for f in _glob.glob(os.path.join(BASE, 'output', 'signal_cache_*.pkl')):
+        os.remove(f)
 
     t0 = time.time()
     mktcap_lookup = build_mktcap_lookup()
