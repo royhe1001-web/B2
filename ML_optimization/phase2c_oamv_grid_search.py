@@ -383,6 +383,8 @@ class OAMVSimEngine:
             pos.shares -= sell_shares
             pos.cost -= cost_part
             pos.half_sold = True
+            if pos.shares <= 0:
+                self.positions.pop(code)
 
         self.closed_positions.append({
             'code': code, 'buy_price': pos.buy_price,
