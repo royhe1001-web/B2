@@ -486,6 +486,12 @@ def preload_stock_data(eligible_codes):
             continue
         try:
             df = pd.read_parquet(f)
+            # Handle date as column or index
+            if 'date' not in df.columns:
+                if df.index.name == 'date' or (isinstance(df.index, pd.DatetimeIndex)):
+                    df = df.reset_index()
+                else:
+                    continue
             cols_avail = [c for c in NEEDED_COLS_S2 if c in df.columns]
             df = df[cols_avail].copy()
             df['date'] = pd.to_datetime(df['date'])
