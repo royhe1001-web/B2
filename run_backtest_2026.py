@@ -36,10 +36,12 @@ BEST_B2 = {
     'weight_brick_resonance': 1.5,
     'sector_momentum_enabled': False,
     'dynamic_thresholds': False, 'trend_filter': False,
+    'rotate_base': 0.5,
 }
 
 BEST_OAMV = {
     'mktcap_lower_pct': 50, 'mktcap_upper_pct': 96,
+    'max_positions': 4,
 }
 
 
