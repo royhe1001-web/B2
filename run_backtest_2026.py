@@ -33,7 +33,6 @@ BEST_B2 = {
     'weight_deep_shrink': 1.3, 'weight_pullback_thresh': -0.05,
     'weight_pullback': 1.2, 'weight_shadow_discount_thresh': 0.015,
     'weight_shadow_discount': 0.7, 'weight_strong_discount': 0.8,
-    'weight_brick_resonance': 1.5,
     'sector_momentum_enabled': False,
     'dynamic_thresholds': False, 'trend_filter': False,
     'rotate_base': 0.5,
