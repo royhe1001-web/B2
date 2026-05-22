@@ -59,7 +59,9 @@ def _fetch_index_ts(ts_code: str, start: str, end: str) -> pd.DataFrame:
     """通过 tushare 获取指数日线数据（含成交额）。"""
     import tushare as ts
 
-    ts_token = "c2a96ee78a444f422063ba90ed4460a8f252f3fd136ea893f6c310ae"
+    ts_token = os.environ.get('TUSHARE_TOKEN', '')
+    if not ts_token:
+        raise RuntimeError('请设置环境变量 TUSHARE_TOKEN')
     ts.set_token(ts_token)
     pro = ts.pro_api()
 
